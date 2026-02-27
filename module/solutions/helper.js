@@ -244,7 +244,8 @@ module.exports = class SolutionsHelper {
     filter,
     surveyReportPage = '',
     currentScopeOnly = false,
-    tenantFilter
+    tenantFilter,
+    showReferenceFrom = false
   ) {
     return new Promise(async (resolve, reject) => {
       try {
@@ -256,7 +257,8 @@ module.exports = class SolutionsHelper {
           search,
           filter,
           surveyReportPage,
-          tenantFilter
+          tenantFilter,
+          showReferenceFrom
         );
 
         let totalCount = 0;
@@ -447,7 +449,7 @@ module.exports = class SolutionsHelper {
    * @returns {Object} - Details of the solution.
    */
 
-  static assignedUserSolutions(solutionType, userId, search, filter, surveyReportPage = '', tenantFilter) {
+  static assignedUserSolutions(solutionType, userId, search, filter, surveyReportPage = '', tenantFilter, showReferenceFrom = false) {
     return new Promise(async (resolve, reject) => {
       try {
         let userAssignedSolutions = {};
@@ -459,7 +461,8 @@ module.exports = class SolutionsHelper {
             '', //Page Size
             search,
             filter,
-            tenantFilter
+            tenantFilter,
+            showReferenceFrom
           );
         } else if (solutionType === messageConstants.common.SURVEY) {
           userAssignedSolutions = await surveyHelperUtils.userAssigned(
