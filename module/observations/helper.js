@@ -1790,7 +1790,7 @@ module.exports = class ObservationsHelper {
               _id: { $in: solutionIds },
               tenantId: tenantFilter.tenantId,
             },
-            ['language', 'creator']
+            ['language', 'creator', 'keywords']
           );
           //Adding creator and language to the observation document fetched from the solution documents
           solutionDocuments.forEach((solutionDocument) => {
@@ -1798,6 +1798,7 @@ module.exports = class ObservationsHelper {
               (resultData) => resultData.solutionId.toString() === solutionDocument._id.toString()
             );
             solution['language'] = solutionDocument.language;
+            solution['keywords'] = solutionDocument.keywords;
             solution['creator'] = solutionDocument.creator ? solutionDocument.creator : '';
           });
         }
