@@ -1073,7 +1073,6 @@ module.exports = class ObservationsHelper {
         isRubricDriven: 1,
         project: 1,
         referenceFrom: 1,
-        keywords: 1,
         pageHeading: 1,
         criteriaLevelReport: 1,
         endDate: 1,
@@ -1714,7 +1713,6 @@ module.exports = class ObservationsHelper {
             description: 1,
             referenceFrom: 1,
             project: 1,
-            keywords: 1,
             solutionId: 1,
             programId: 1,
             entityType: 1,
@@ -1792,7 +1790,7 @@ module.exports = class ObservationsHelper {
               _id: { $in: solutionIds },
               tenantId: tenantFilter.tenantId,
             },
-            ['language', 'creator']
+            ['language', 'creator', 'keywords']
           );
           //Adding creator and language to the observation document fetched from the solution documents
           solutionDocuments.forEach((solutionDocument) => {
@@ -1800,6 +1798,7 @@ module.exports = class ObservationsHelper {
               (resultData) => resultData.solutionId.toString() === solutionDocument._id.toString()
             );
             solution['language'] = solutionDocument.language;
+            solution['keywords'] = solutionDocument.keywords;
             solution['creator'] = solutionDocument.creator ? solutionDocument.creator : '';
           });
         }
