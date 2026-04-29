@@ -568,10 +568,23 @@ module.exports = class ObservationSubmissionsHelper {
    * @param {String} - observationId
    * @param {Object} - tenantData
    * @param {String} [filterAnswerValue=null] - Optional filter value to search in submission answers
+   * @param {Boolean} [getAnswers=false] - When true, include top-level `answers` in projection (e.g. query getAnswers=true)
+   * @param {Boolean} [shouldPaginate=false] - When true, slice the final list (after any answer filter), using `page` / `limit` from middleware
+   * @param {Number} [pageNo=1] - Current page from pagination middleware (`page` query param)
+   * @param {Number} [pageSize=100] - Page size from middleware (`limit` query param, max 100)
    * @returns {Object} - list of submissions
    */
 
-  static list(entityId, observationId, tenantData, filterAnswerValue = null) {
+  static list(
+    entityId,
+    observationId,
+    tenantData,
+    filterAnswerValue = null,
+    getAnswers = false,
+    shouldPaginate = false,
+    pageNo = 1,
+    pageSize = 100
+  ) {
     return new Promise(async (resolve, reject) => {
       try {
         let queryObject = {
@@ -581,7 +594,8 @@ module.exports = class ObservationSubmissionsHelper {
           orgId: tenantData.orgId,
         };
 
-        // Note: filterAnswerValue filtering is done post-query in JavaScript
+        // filterAnswerValue is applied in JS (nested evidences/answers). That means we cannot use MongoDB
+        // skip/limit on the initial find for that case: we need every matching row first, then filter, then paginate.
 
         let projection = [
           'status',
@@ -607,6 +621,10 @@ module.exports = class ObservationSubmissionsHelper {
           "evidencesStatus.canBeNotAllowed",
           "evidencesStatus.notApplicable"
         ];
+
+        if (getAnswers === true) {
+          projection.push('answers');
+        }
 
         // Include evidences field when filtering by answer value
         if (filterAnswerValue != null && String(filterAnswerValue).trim() !== '') {
@@ -667,11 +685,22 @@ module.exports = class ObservationSubmissionsHelper {
         }
 
         if (!result.length > 0) {
-          return resolve({
+          const emptyBody = {
             status: httpStatusCode.ok.status,
             message: messageConstants.apiResponses.SUBMISSION_NOT_FOUND,
             result: [],
-          });
+          };
+          if (shouldPaginate) {
+            emptyBody.count = 0;
+            emptyBody.totalCount = 0;
+            emptyBody.total = 0;
+            emptyBody.pagination = {
+              page: pageNo,
+              limit: pageSize,
+              totalPages: 0,
+            };
+          }
+          return resolve(emptyBody);
         }
 
         result = result.map((resultedData) => {
@@ -711,10 +740,30 @@ module.exports = class ObservationSubmissionsHelper {
           return _.omit(resultedData, ['completedDate']);
         });
 
-        return resolve({
+        const totalCount = result.length;
+        let pageResult = result;
+        // Slice after map so counts match; with filterAnswerValue this is the only correct order (full scan → filter → page).
+        if (shouldPaginate) {
+          const start = (pageNo - 1) * pageSize;
+          pageResult = result.slice(start, start + pageSize);
+        }
+
+        const responsePayload = {
           message: messageConstants.apiResponses.OBSERVATION_SUBMISSIONS_LIST_FETCHED,
-          result: result,
-        });
+          result: pageResult,
+        };
+        if (shouldPaginate) {
+          responsePayload.count = pageResult.length;
+          responsePayload.totalCount = totalCount;
+          responsePayload.total = totalCount;
+          responsePayload.pagination = {
+            page: pageNo,
+            limit: pageSize,
+            totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
+          };
+        }
+
+        return resolve(responsePayload);
       } catch (error) {
         return reject(error);
       }
