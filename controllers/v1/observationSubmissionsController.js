@@ -971,6 +971,9 @@ module.exports = class ObservationSubmissions extends Abstract {
    * @param {String} req.query.entityId - entity id.
    * @param {String} req.params._id - observation id.
    * @param {String} [req.query.filterAnswerValue] - Optional filter value to search in submission answers.
+   * @param {String} [req.query.getAnswers] - Pass true to include answers field in each submission (e.g. getAnswers=true).
+   * @param {String} [req.query.page] - Page number (pagination middleware sets `req.pageNo`, default 1).
+   * @param {String} [req.query.limit] - Page size, max 100 (middleware sets `req.pageSize`, default 100).
    * @returns {JSON} consists of list of observation submissions.
    */
   async list(req) {
@@ -982,11 +985,18 @@ module.exports = class ObservationSubmissions extends Abstract {
             ? String(req.query.filterAnswerValue).trim()
             : null;
 
+        const getAnswers =
+          req.query.getAnswers === true ||
+          req.query.getAnswers === 'true';
+
         let submissionDocument = await observationSubmissionsHelper.list(
           req.query.entityId,
           req.params._id,
           req.userDetails.tenantData,
-          filterAnswerValue
+          filterAnswerValue,
+          getAnswers,
+          req.pageNo,
+          req.pageSize
         );
         return resolve(submissionDocument);
       } catch (error) {

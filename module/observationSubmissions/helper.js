@@ -568,10 +568,21 @@ module.exports = class ObservationSubmissionsHelper {
    * @param {String} - observationId
    * @param {Object} - tenantData
    * @param {String} [filterAnswerValue=null] - Optional filter value to search in submission answers
-   * @returns {Object} - list of submissions
+   * @param {Boolean} [getAnswers=false] - When true, include top-level `answers` in projection (e.g. query getAnswers=true)
+   * @param {Number} [pageNo=1] - From pagination middleware (same pattern as `solutions`, `entities`, `programs` helpers)
+   * @param {Number} [pageSize=100] - From middleware (`limit` query, max 100; default 100)
+   * @returns {Object} - Paginated list: `count` (rows this page), `total` (all matches). No `totalCount` or `pagination` keys (aligned with project-service router).
    */
 
-  static list(entityId, observationId, tenantData, filterAnswerValue = null) {
+  static list(
+    entityId,
+    observationId,
+    tenantData,
+    filterAnswerValue = null,
+    getAnswers = false,
+    pageNo = 1,
+    pageSize = 100
+  ) {
     return new Promise(async (resolve, reject) => {
       try {
         let queryObject = {
@@ -581,7 +592,8 @@ module.exports = class ObservationSubmissionsHelper {
           orgId: tenantData.orgId,
         };
 
-        // Note: filterAnswerValue filtering is done post-query in JavaScript
+        // filterAnswerValue is applied in JS (nested evidences/answers). That means we cannot use MongoDB
+        // skip/limit on the initial find for that case: we need every matching row first, then filter, then paginate.
 
         let projection = [
           'status',
@@ -607,6 +619,10 @@ module.exports = class ObservationSubmissionsHelper {
           "evidencesStatus.canBeNotAllowed",
           "evidencesStatus.notApplicable"
         ];
+
+        if (getAnswers === true) {
+          projection.push('answers');
+        }
 
         // Include evidences field when filtering by answer value
         if (filterAnswerValue != null && String(filterAnswerValue).trim() !== '') {
@@ -671,6 +687,7 @@ module.exports = class ObservationSubmissionsHelper {
             status: httpStatusCode.ok.status,
             message: messageConstants.apiResponses.SUBMISSION_NOT_FOUND,
             result: [],
+            total: 0,
           });
         }
 
@@ -711,9 +728,14 @@ module.exports = class ObservationSubmissionsHelper {
           return _.omit(resultedData, ['completedDate']);
         });
 
+        const totalMatching = result.length;
+        const start = (pageNo - 1) * pageSize;
+        const pageResult = result.slice(start, start + pageSize);
+
         return resolve({
           message: messageConstants.apiResponses.OBSERVATION_SUBMISSIONS_LIST_FETCHED,
-          result: result,
+          result: pageResult,
+          total: totalMatching,
         });
       } catch (error) {
         return reject(error);
