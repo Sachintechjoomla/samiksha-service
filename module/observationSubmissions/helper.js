@@ -689,7 +689,6 @@ module.exports = class ObservationSubmissionsHelper {
             result: [],
             count: 0,
             totalCount: 0,
-            total: 0,
             pagination: {
               page: pageNo,
               limit: pageSize,
@@ -744,7 +743,6 @@ module.exports = class ObservationSubmissionsHelper {
           result: pageResult,
           count: pageResult.length,
           totalCount: totalCount,
-          total: totalCount,
           pagination: {
             page: pageNo,
             limit: pageSize,
