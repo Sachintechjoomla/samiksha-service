@@ -571,7 +571,7 @@ module.exports = class ObservationSubmissionsHelper {
    * @param {Boolean} [getAnswers=false] - When true, include top-level `answers` in projection (e.g. query getAnswers=true)
    * @param {Number} [pageNo=1] - From pagination middleware (same pattern as `solutions`, `entities`, `programs` helpers)
    * @param {Number} [pageSize=100] - From middleware (`limit` query, max 100; default 100)
-   * @returns {Object} - list of submissions
+   * @returns {Object} - Paginated list: `count` (rows this page), `total` (all matches). No `totalCount` or `pagination` keys (aligned with project-service router).
    */
 
   static list(
@@ -687,13 +687,7 @@ module.exports = class ObservationSubmissionsHelper {
             status: httpStatusCode.ok.status,
             message: messageConstants.apiResponses.SUBMISSION_NOT_FOUND,
             result: [],
-            count: 0,
-            totalCount: 0,
-            pagination: {
-              page: pageNo,
-              limit: pageSize,
-              totalPages: 0,
-            },
+            total: 0,
           });
         }
 
@@ -734,20 +728,14 @@ module.exports = class ObservationSubmissionsHelper {
           return _.omit(resultedData, ['completedDate']);
         });
 
-        const totalCount = result.length;
+        const totalMatching = result.length;
         const start = (pageNo - 1) * pageSize;
         const pageResult = result.slice(start, start + pageSize);
 
         return resolve({
           message: messageConstants.apiResponses.OBSERVATION_SUBMISSIONS_LIST_FETCHED,
           result: pageResult,
-          count: pageResult.length,
-          totalCount: totalCount,
-          pagination: {
-            page: pageNo,
-            limit: pageSize,
-            totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
-          },
+          total: totalMatching,
         });
       } catch (error) {
         return reject(error);
