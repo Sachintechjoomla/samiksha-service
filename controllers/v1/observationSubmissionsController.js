@@ -972,8 +972,8 @@ module.exports = class ObservationSubmissions extends Abstract {
    * @param {String} req.params._id - observation id.
    * @param {String} [req.query.filterAnswerValue] - Optional filter value to search in submission answers.
    * @param {String} [req.query.getAnswers] - Pass true to include answers field in each submission (e.g. getAnswers=true).
-   * @param {String} [req.query.page] - Same as project-service pagination middleware: if `page` and/or `limit` appear in the query string, list is paginated using `req.pageNo` / `req.pageSize`.
-   * @param {String} [req.query.limit] - Page size (max 100); query param name aligns with project-service.
+   * @param {String} [req.query.page] - Page number (pagination middleware sets `req.pageNo`, default 1).
+   * @param {String} [req.query.limit] - Page size, max 100 (middleware sets `req.pageSize`, default 100).
    * @returns {JSON} consists of list of observation submissions.
    */
   async list(req) {
@@ -989,27 +989,12 @@ module.exports = class ObservationSubmissions extends Abstract {
           req.query.getAnswers === true ||
           req.query.getAnswers === 'true';
 
-        // Pagination middleware always sets req.pageNo / req.pageSize (defaults 1 / 100) but strips
-        // `page` and `limit` from req.query — detect original query via URL (same params as project-service: page, limit).
-        let shouldPaginate = false;
-        try {
-          const raw = req.originalUrl || req.url || '';
-          const qIndex = raw.indexOf('?');
-          if (qIndex !== -1) {
-            const params = new URLSearchParams(raw.slice(qIndex + 1));
-            shouldPaginate = params.has('page') || params.has('limit');
-          }
-        } catch (e) {
-          shouldPaginate = false;
-        }
-
         let submissionDocument = await observationSubmissionsHelper.list(
           req.query.entityId,
           req.params._id,
           req.userDetails.tenantData,
           filterAnswerValue,
           getAnswers,
-          shouldPaginate,
           req.pageNo,
           req.pageSize
         );

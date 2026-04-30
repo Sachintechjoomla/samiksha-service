@@ -569,9 +569,8 @@ module.exports = class ObservationSubmissionsHelper {
    * @param {Object} - tenantData
    * @param {String} [filterAnswerValue=null] - Optional filter value to search in submission answers
    * @param {Boolean} [getAnswers=false] - When true, include top-level `answers` in projection (e.g. query getAnswers=true)
-   * @param {Boolean} [shouldPaginate=false] - When true, slice the final list (after any answer filter), using `page` / `limit` from middleware
-   * @param {Number} [pageNo=1] - Current page from pagination middleware (`page` query param)
-   * @param {Number} [pageSize=100] - Page size from middleware (`limit` query param, max 100)
+   * @param {Number} [pageNo=1] - From pagination middleware (same pattern as `solutions`, `entities`, `programs` helpers)
+   * @param {Number} [pageSize=100] - From middleware (`limit` query, max 100; default 100)
    * @returns {Object} - list of submissions
    */
 
@@ -581,7 +580,6 @@ module.exports = class ObservationSubmissionsHelper {
     tenantData,
     filterAnswerValue = null,
     getAnswers = false,
-    shouldPaginate = false,
     pageNo = 1,
     pageSize = 100
   ) {
@@ -685,22 +683,19 @@ module.exports = class ObservationSubmissionsHelper {
         }
 
         if (!result.length > 0) {
-          const emptyBody = {
+          return resolve({
             status: httpStatusCode.ok.status,
             message: messageConstants.apiResponses.SUBMISSION_NOT_FOUND,
             result: [],
-          };
-          if (shouldPaginate) {
-            emptyBody.count = 0;
-            emptyBody.totalCount = 0;
-            emptyBody.total = 0;
-            emptyBody.pagination = {
+            count: 0,
+            totalCount: 0,
+            total: 0,
+            pagination: {
               page: pageNo,
               limit: pageSize,
               totalPages: 0,
-            };
-          }
-          return resolve(emptyBody);
+            },
+          });
         }
 
         result = result.map((resultedData) => {
@@ -741,29 +736,21 @@ module.exports = class ObservationSubmissionsHelper {
         });
 
         const totalCount = result.length;
-        let pageResult = result;
-        // Slice after map so counts match; with filterAnswerValue this is the only correct order (full scan → filter → page).
-        if (shouldPaginate) {
-          const start = (pageNo - 1) * pageSize;
-          pageResult = result.slice(start, start + pageSize);
-        }
+        const start = (pageNo - 1) * pageSize;
+        const pageResult = result.slice(start, start + pageSize);
 
-        const responsePayload = {
+        return resolve({
           message: messageConstants.apiResponses.OBSERVATION_SUBMISSIONS_LIST_FETCHED,
           result: pageResult,
-        };
-        if (shouldPaginate) {
-          responsePayload.count = pageResult.length;
-          responsePayload.totalCount = totalCount;
-          responsePayload.total = totalCount;
-          responsePayload.pagination = {
+          count: pageResult.length,
+          totalCount: totalCount,
+          total: totalCount,
+          pagination: {
             page: pageNo,
             limit: pageSize,
             totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
-          };
-        }
-
-        return resolve(responsePayload);
+          },
+        });
       } catch (error) {
         return reject(error);
       }
