@@ -364,10 +364,12 @@ module.exports = class AssessmentsHelper {
                 ) {
                   let eachQuestion = eachSection.questions[pointerToEachSectionQuestion];
 
-                  // Store question sectionHeader as it will be used as the page question header, and clear it
-                  // as it is showing on top of each question label while rendering
+                  // Store sectionHeader / sectionDescription for the synthetic pageQuestions row (same lifecycle).
+                  // sectionHeader maps to `question` on the page node; sectionDescription stays `sectionDescription`.
                   let pageQuestionHeader = eachQuestion.sectionHeader;
                   eachQuestion.sectionHeader = '';
+                  let pageQuestionDescription = eachQuestion.sectionDescription;
+                  eachQuestion.sectionDescription = '';
 
                   if (eachQuestion.page && eachQuestion.page !== '') {
                     let pageName = eachQuestion.page.toLowerCase();
@@ -403,6 +405,14 @@ module.exports = class AssessmentsHelper {
                          pageQuestionsObj[pageName]['question'] = String(pageQuestionHeader).trim();
                       }
 
+                      if (
+                        pageQuestionDescription != null &&
+                        pageQuestionDescription !== '' &&
+                        String(pageQuestionDescription).trim() !== ''
+                      ) {
+                        pageQuestionsObj[pageName]['sectionDescription'] = String(pageQuestionDescription).trim();
+                      }
+
                       pageQuestionsObj[pageName]['page'] = pageName;
                       pageQuestionsObj[pageName]['pageQuestions'] = [];
                     }
@@ -414,10 +424,11 @@ module.exports = class AssessmentsHelper {
                       Array.isArray(eachQuestion.instanceQuestions) && 
                       eachQuestion.instanceQuestions.length > 0) {
 
-                      // Clear sectionHeader for each instanceQuestion
+                      // Clear section chrome on instance rows (same as parent leaf)
                       eachQuestion.instanceQuestions.forEach((instanceQuestion) => {
                         if (instanceQuestion && typeof instanceQuestion === 'object') {
                             instanceQuestion.sectionHeader = '';
+                            instanceQuestion.sectionDescription = '';
                           }
                         });
                     }
