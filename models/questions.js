@@ -44,6 +44,7 @@ module.exports = {
     autoCapture: { type: Boolean, default: false },
     rubricLevel: String,
     sectionHeader: String,
+    sectionDescription: String,
     allowAudioRecording: { type: Boolean, default: false },
     page: String,
     questionNumber: String,
