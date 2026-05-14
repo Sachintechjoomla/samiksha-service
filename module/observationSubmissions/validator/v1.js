@@ -27,16 +27,18 @@ module.exports = (req) => {
     },
 
     list: function () {
-      req
-        .checkParams('_id')
-        .exists()
-        .withMessage('required observation id')
-        .isMongoId()
-        .withMessage('Invalid observation id');
-      req
-        .checkQuery('entityId')
-        .exists()
-        .withMessage('required entity id')
+      // Observation id is optional: scope by entityId only, or narrow with path `_id` or query `observationId`.
+      if (req.params._id) {
+        req.checkParams('_id').isMongoId().withMessage('Invalid observation id');
+      } else if (req.query.observationId != null && String(req.query.observationId).trim() !== '') {
+        req.checkQuery('observationId').isMongoId().withMessage('Invalid observation id');
+      }
+
+      req.checkQuery('entityId').exists().withMessage('required entity id');
+
+      if (req.query.status != null && String(req.query.status).trim() !== '') {
+        req.checkQuery('status').trim().notEmpty().withMessage('status cannot be empty');
+      }
     },
 
     status: function () {

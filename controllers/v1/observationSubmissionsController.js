@@ -937,11 +937,13 @@ module.exports = class ObservationSubmissions extends Abstract {
   }
 
   /**
-  * @api {get} /assessment/api/v1/observationSubmissions/list/:observationId?entityId:entityId List Observation Submissions
+  * @api {post} /assessment/api/v1/observationSubmissions/list/:observationId?entityId=&status= List Observation Submissions
   * @apiVersion 1.0.0
   * @apiName List Observation Submissions
   * @apiGroup Observation Submissions
+  * @apiDescription Use `POST .../list/:observationId?entityId=` to list for one observation, or `POST .../list?entityId=` (no path id) for all submissions for that entity. Optional query `observationId` works when the path has no id. Optional `status` filters by submission status (e.g. started, completed).
   * @apiSampleRequest /assessment/api/v1/observationSubmissions/list/5d1a002d2dfd8135bc8e1615?entityId=5cee7d1390013936552f6a8d
+  * @apiSampleRequest /assessment/api/v1/observationSubmissions/list?entityId=5cee7d1390013936552f6a8d&status=started
   * @apiUse successBody
   * @apiUse errorBody
   * @apiParamExample {json} Response:
@@ -968,8 +970,10 @@ module.exports = class ObservationSubmissions extends Abstract {
    * @method
    * @name list
    * @param {Object} req - requested data.
-   * @param {String} req.query.entityId - entity id.
-   * @param {String} req.params._id - observation id.
+   * @param {String} req.query.entityId - entity id (required).
+   * @param {String} [req.params._id] - Optional observation id when using `.../list/:observationId`.
+   * @param {String} [req.query.observationId] - Optional observation id when using `.../list` without path id.
+   * @param {String} [req.query.status] - Optional filter on submission document `status` (exact match).
    * @param {String} [req.query.filterAnswerValue] - Optional filter value to search in submission answers.
    * @param {String} [req.query.getAnswers] - Pass true to include answers field in each submission (e.g. getAnswers=true).
    * @param {String} [req.query.page] - Page number (pagination middleware sets `req.pageNo`, default 1).
@@ -989,14 +993,28 @@ module.exports = class ObservationSubmissions extends Abstract {
           req.query.getAnswers === true ||
           req.query.getAnswers === 'true';
 
+        const observationIdFromPath =
+          req.params._id != null && String(req.params._id).trim() !== '' ? String(req.params._id).trim() : null;
+        const observationIdFromQuery =
+          req.query.observationId != null && String(req.query.observationId).trim() !== ''
+            ? String(req.query.observationId).trim()
+            : null;
+        const observationId = observationIdFromPath || observationIdFromQuery || null;
+
+        const statusFilter =
+          req.query.status != null && String(req.query.status).trim() !== ''
+            ? String(req.query.status).trim()
+            : null;
+
         let submissionDocument = await observationSubmissionsHelper.list(
           req.query.entityId,
-          req.params._id,
+          observationId,
           req.userDetails.tenantData,
           filterAnswerValue,
           getAnswers,
           req.pageNo,
-          req.pageSize
+          req.pageSize,
+          statusFilter
         );
         return resolve(submissionDocument);
       } catch (error) {
