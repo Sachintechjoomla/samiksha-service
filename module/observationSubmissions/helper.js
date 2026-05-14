@@ -589,8 +589,8 @@ module.exports = class ObservationSubmissionsHelper {
       try {
         let queryObject = {
           entityId: entityId,
-          // tenantId: tenantData.tenantId,
-          // orgId: tenantData.orgId,
+          tenantId: tenantData.tenantId,
+          orgId: tenantData.orgId,
         };
 
         if (observationId != null && String(observationId).trim() !== '') {
