@@ -37,6 +37,14 @@ module.exports = (req) => {
         .checkQuery('entityId')
         .exists()
         .withMessage('required entity id')
+
+      if (req.query.status != null && String(req.query.status).trim() !== '') {
+        req
+          .checkQuery('status')
+          .trim()
+          .notEmpty()
+          .withMessage('status cannot be empty');
+      }
     },
 
     status: function () {

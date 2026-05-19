@@ -571,6 +571,7 @@ module.exports = class ObservationSubmissionsHelper {
    * @param {Boolean} [getAnswers=false] - When true, include top-level `answers` in projection (e.g. query getAnswers=true)
    * @param {Number} [pageNo=1] - From pagination middleware (same pattern as `solutions`, `entities`, `programs` helpers)
    * @param {Number} [pageSize=100] - From middleware (`limit` query, max 100; default 100)
+   * @param {String} [status=null] - Optional submission `status` filter (exact match on document `status`)
    * @returns {Object} - Paginated list: `count` (rows this page), `total` (all matches). No `totalCount` or `pagination` keys (aligned with project-service router).
    */
 
@@ -581,7 +582,8 @@ module.exports = class ObservationSubmissionsHelper {
     filterAnswerValue = null,
     getAnswers = false,
     pageNo = 1,
-    pageSize = 100
+    pageSize = 100,
+    status = null
   ) {
     return new Promise(async (resolve, reject) => {
       try {
@@ -591,6 +593,10 @@ module.exports = class ObservationSubmissionsHelper {
           tenantId: tenantData.tenantId,
           orgId: tenantData.orgId,
         };
+
+        if (status != null && String(status).trim() !== '') {
+          queryObject.status = String(status).trim();
+        }
 
         // filterAnswerValue is applied in JS (nested evidences/answers). That means we cannot use MongoDB
         // skip/limit on the initial find for that case: we need every matching row first, then filter, then paginate.

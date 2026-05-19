@@ -937,11 +937,12 @@ module.exports = class ObservationSubmissions extends Abstract {
   }
 
   /**
-  * @api {get} /assessment/api/v1/observationSubmissions/list/:observationId?entityId:entityId List Observation Submissions
+  * @api {get} /assessment/api/v1/observationSubmissions/list/:observationId?entityId:entityId&status= List Observation Submissions
   * @apiVersion 1.0.0
   * @apiName List Observation Submissions
   * @apiGroup Observation Submissions
   * @apiSampleRequest /assessment/api/v1/observationSubmissions/list/5d1a002d2dfd8135bc8e1615?entityId=5cee7d1390013936552f6a8d
+  * @apiSampleRequest /assessment/api/v1/observationSubmissions/list/5d1a002d2dfd8135bc8e1615?entityId=5cee7d1390013936552f6a8d&status=started
   * @apiUse successBody
   * @apiUse errorBody
   * @apiParamExample {json} Response:
@@ -972,6 +973,7 @@ module.exports = class ObservationSubmissions extends Abstract {
    * @param {String} req.params._id - observation id.
    * @param {String} [req.query.filterAnswerValue] - Optional filter value to search in submission answers.
    * @param {String} [req.query.getAnswers] - Pass true to include answers field in each submission (e.g. getAnswers=true).
+   * @param {String} [req.query.status] - Optional filter on submission document `status` (exact match).
    * @param {String} [req.query.page] - Page number (pagination middleware sets `req.pageNo`, default 1).
    * @param {String} [req.query.limit] - Page size, max 100 (middleware sets `req.pageSize`, default 100).
    * @returns {JSON} consists of list of observation submissions.
@@ -989,6 +991,10 @@ module.exports = class ObservationSubmissions extends Abstract {
           req.query.getAnswers === true ||
           req.query.getAnswers === 'true';
 
+        const statusFilter = req.query.status != null && String(req.query.status).trim() !== ''
+            ? String(req.query.status).trim()
+            : null;
+
         let submissionDocument = await observationSubmissionsHelper.list(
           req.query.entityId,
           req.params._id,
@@ -996,7 +1002,8 @@ module.exports = class ObservationSubmissions extends Abstract {
           filterAnswerValue,
           getAnswers,
           req.pageNo,
-          req.pageSize
+          req.pageSize,
+          statusFilter
         );
         return resolve(submissionDocument);
       } catch (error) {
