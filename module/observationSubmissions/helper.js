@@ -589,13 +589,10 @@ module.exports = class ObservationSubmissionsHelper {
       try {
         let queryObject = {
           entityId: entityId,
+          observationId: observationId,
           tenantId: tenantData.tenantId,
           orgId: tenantData.orgId,
         };
-
-        if (observationId != null && String(observationId).trim() !== '') {
-          queryObject.observationId = new ObjectId(String(observationId).trim());
-        }
 
         if (status != null && String(status).trim() !== '') {
           queryObject.status = String(status).trim();
